@@ -1,0 +1,84 @@
+{
+  "personal_info1": {
+    "first_name": "Daniel",
+    "last_name": "Daniel",
+    "birthday": "1995-05-15"
+  },
+  "gender1": "non-binary",
+  "location1": {
+    "address": "1083 Western Rd, London, ON, Canada",
+    "search_radius": 10
+  },
+  "personal_interests1": ["blockchain", "reading", "hiking"],
+  "partner_preferences1": [
+    {
+      "category": "Lifestyle",
+      "question": "What is your lifestyle?",
+      "options": ["🏠 Homebody (NYC)", "🌍 Digital Nomad (Homeless)"],
+      "selected_index": 0,
+      "selected_option": "🏠 Homebody (NYC)"
+    },
+    {
+      "category": "Blockchain",
+      "question": "What is your blockchain preference?",
+      "options": ["EVM Compatible L1 Maxi", "ETH L2"],
+      "selected_index": 0,
+      "selected_option": "EVM Compatible L1 Maxi"
+    },
+    {
+      "category": "Crypto",
+      "question": "What is your crypto preference?",
+      "options": ["💎 ETH (steady & loyal)", "🚀 Alts (fun & whimsical)"],
+      "selected_index": 0,
+      "selected_option": "💎 ETH (steady & loyal)"
+    },
+    {
+      "category": "Community",
+      "question": "What community do you identify with?",
+      "options": ["The Hodlers 🟧", "The Builders 🛠️", "The Vibers 🐸"],
+      "selected_index": 0,
+      "selected_option": "The Hodlers 🟧"
+    }
+  ],
+  "personal_info2": {
+    "first_name": "Alex",
+    "last_name": "Smith",
+    "birthday": "1993-08-20"
+  },
+  "gender2": "male",
+  "location2": {
+    "address": "1000 Western Rd, London, ON, Canada",
+    "search_radius": 15
+  },
+  "personal_interests2": ["blockchain", "gaming", "hiking"],
+  "partner_preferences2": [
+    {
+      "category": "Lifestyle",
+      "question": "What is your lifestyle?",
+      "options": ["🏠 Homebody (NYC)", "🌍 Digital Nomad (Homeless)"],
+      "selected_index": 0,
+      "selected_option": "🏠 Homebody (NYC)"
+    },
+    {
+      "category": "Blockchain",
+      "question": "What is your blockchain preference?",
+      "options": ["EVM Compatible L1 Maxi", "ETH L2"],
+      "selected_index": 0,
+      "selected_option": "EVM Compatible L1 Maxi"
+    },
+    {
+      "category": "Crypto",
+      "question": "What is your crypto preference?",
+      "options": ["💎 ETH (steady & loyal)", "🚀 Alts (fun & whimsical)"],
+      "selected_index": 1,
+      "selected_option": "🚀 Alts (fun & whimsical)"
+    },
+    {
+      "category": "Community",
+      "question": "What community do you identify with?",
+      "options": ["The Hodlers 🟧", "The Builders 🛠️", "The Vibers 🐸"],
+      "selected_index": 1,
+      "selected_option": "The Builders 🛠️"
+    }
+  ]
+}
