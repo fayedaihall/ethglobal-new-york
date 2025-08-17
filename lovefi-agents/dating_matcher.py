@@ -23,7 +23,7 @@ agent = Agent(
     name="dating_matcher",
     seed="your_secret_seed_phrase",  # Replace with a secure seed for fixed address
     port=8000,
-    endpoint=["https://your-app.vercel.app/api/submit"],  # Update with your Vercel deployment URL
+    endpoint=["https://ethglobal-new-york.vercel.app/api/submit"],  # Update with your Vercel deployment URL
 )
 
 # Protocol for the agent (optional, but good practice)
