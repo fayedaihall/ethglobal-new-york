@@ -1,35 +1,16 @@
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
 import json
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 import base64
-from mangum import Mangum
+
+try:
+    from mangum import Mangum
+except ImportError:
+    # Fallback if mangum is not available
+    Mangum = None
 
 app = FastAPI(title="Dating Matcher API")
-
-# Pydantic models
-class Profile(BaseModel):
-    age: int
-    interests: List[str]
-    location: str
-    name: Optional[str] = None
-
-class MatchingRequest(BaseModel):
-    profile1: Profile
-    profile2: Profile
-
-class CompatibilityFactors(BaseModel):
-    age: Dict
-    interests: Dict
-    location: Dict
-    overall_score: float
-
-class MatchingResponse(BaseModel):
-    score: float
-    explanation: str
-    compatibility_factors: CompatibilityFactors
-    recommendations: List[str]
 
 @app.post("/api/submit")
 @app.post("/submit")
