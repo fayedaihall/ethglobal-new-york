@@ -1,0 +1,85 @@
+# Virtual Environments
+venv/
+env/
+ENV/
+.venv/
+.ENV/
+*/venv/
+*/env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# API Keys and Secrets (CRITICAL!)
+*.key
+*.pem
+.secrets
+secrets.json
+config.json
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Agent data files
+*_data.json
+agent_data/
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+Thumbs.db
+ehthumbs.db
+Icon?
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Vercel
+.vercel
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+.cache
