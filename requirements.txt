@@ -1,1 +1,1 @@
-flask>=2.0.0
+# Node.js deployment - no Python requirements needed
