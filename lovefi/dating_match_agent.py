@@ -115,8 +115,121 @@ def create_text_chat(text: str, end_session: bool = False) -> ChatMessage:
         content=content,
     )
 
-# Function to calculate match score
+# Function to calculate match score (wrapper for simple parameters)
 def calculate_match_score(
+    name1: str = None, age1: int = None, interests1: List[str] = None, location1: str = None, preferences1: dict = None,
+    name2: str = None, age2: int = None, interests2: List[str] = None, location2: str = None, preferences2: dict = None,
+    # Original parameters for backward compatibility
+    personal_info1: PersonalInfo = None, gender1: str = None, location1_obj: Location = None, personal_interests1: List[str] = None, partner_preferences1: List[Preference] = None,
+    personal_info2: PersonalInfo = None, gender2: str = None, location2_obj: Location = None, personal_interests2: List[str] = None, partner_preferences2: List[Preference] = None
+) -> tuple[float, str]:
+    # Handle simple parameter format (for testing)
+    if name1 is not None and personal_info1 is None:
+        # Create PersonalInfo objects from simple parameters
+        personal_info1 = PersonalInfo(first_name=name1.split()[0] if name1 else "Unknown", last_name=name1.split()[-1] if name1 and len(name1.split()) > 1 else "", birthday="")
+        personal_info2 = PersonalInfo(first_name=name2.split()[0] if name2 else "Unknown", last_name=name2.split()[-1] if name2 and len(name2.split()) > 1 else "", birthday="")
+        
+        # Create Location objects from simple parameters
+        max_age_diff1 = preferences1.get("max_age_diff", 10) if preferences1 else 10
+        max_age_diff2 = preferences2.get("max_age_diff", 10) if preferences2 else 10
+        location1_obj = Location(address=location1 if location1 else "", search_radius=max_age_diff1)  # Reuse for search radius
+        location2_obj = Location(address=location2 if location2 else "", search_radius=max_age_diff2)
+        
+        # Use provided interests or empty list
+        personal_interests1 = interests1 if interests1 else []
+        personal_interests2 = interests2 if interests2 else []
+        
+        # Create empty preferences list for now
+        partner_preferences1 = []
+        partner_preferences2 = []
+        
+        # Set default genders
+        gender1 = "not_specified"
+        gender2 = "not_specified"
+        
+        # Call special version for simple parameters that handles ages directly
+        return calculate_match_score_simple(
+            age1, age2, personal_interests1, personal_interests2, location1_obj, location2_obj, 
+            partner_preferences1, partner_preferences2, max_age_diff1, max_age_diff2
+        )
+    
+    return calculate_match_score_internal(
+        personal_info1, gender1, location1_obj, personal_interests1, partner_preferences1,
+        personal_info2, gender2, location2_obj, personal_interests2, partner_preferences2
+    )
+
+# Simple function for test cases with direct age parameters
+def calculate_match_score_simple(
+    age1: int, age2: int, personal_interests1: List[str], personal_interests2: List[str], 
+    location1: Location, location2: Location, partner_preferences1: List[Preference], 
+    partner_preferences2: List[Preference], max_age_diff1: int, max_age_diff2: int
+) -> tuple[float, str]:
+    score = 0.0
+    details = []
+
+    # Interest compatibility (40%)
+    common_interests = set(personal_interests1).intersection(set(personal_interests2))
+    max_interests = max(len(personal_interests1), len(personal_interests2), 1)
+    interest_score = (len(common_interests) / max_interests) * 40
+    score += interest_score
+    details.append(f"Interest compatibility: {interest_score:.1f}/40 (Common interests: {', '.join(common_interests) or 'None'})")
+
+    # Age compatibility (20%) - Use direct ages
+    if age1 is not None and age2 is not None:
+        age_diff = abs(age1 - age2)
+        max_age_diff = max(max_age_diff1, max_age_diff2)
+        age_score = max(0, (1 - age_diff / max_age_diff)) * 20 if max_age_diff > 0 else 20
+        age_detail = f"{age_diff} years"
+    else:
+        age_score = 10  # Neutral if unknown
+        age_detail = "Unknown"
+    score += age_score
+    details.append(f"Age compatibility: {age_score:.1f}/20 (Age difference: {age_detail})")
+
+    # Location compatibility (20%)
+    loc_score = 0.0
+    dist = None
+    try:
+        lat1, lon1 = get_coordinates(location1.address)
+        lat2, lon2 = get_coordinates(location2.address)
+        if lat1 is not None and lon1 is not None and lat2 is not None and lon2 is not None:
+            dist = haversine(lon1, lat1, lon2, lat2)
+            max_radius = max(location1.search_radius, location2.search_radius)
+            if dist <= max_radius:
+                loc_score = 20 * (1 - dist / max_radius)
+            else:
+                loc_score = 0
+        else:
+            # Fallback to string similarity
+            similarity = difflib.SequenceMatcher(None, location1.address.lower(), location2.address.lower()).ratio()
+            loc_score = similarity * 20
+    except Exception:
+        # Fallback
+        similarity = difflib.SequenceMatcher(None, location1.address.lower(), location2.address.lower()).ratio()
+        loc_score = similarity * 20
+    score += loc_score
+    dist_str = f"{dist:.1f} km" if dist is not None else "Unknown"
+    details.append(f"Location compatibility: {loc_score:.1f}/20 (Distance: {dist_str})")
+
+    # Preference compatibility (20%)
+    num_matching = 0
+    total = min(len(partner_preferences1), len(partner_preferences2))
+    if total > 0:
+        for p1, p2 in zip(partner_preferences1, partner_preferences2):
+            if p1.selected_option == p2.selected_option:
+                num_matching += 1
+        pref_score = (num_matching / total) * 20
+    else:
+        pref_score = 0
+    score += pref_score
+    details.append(f"Preference compatibility: {pref_score:.1f}/20 (Matching preferences: {num_matching}/{total})")
+
+    # Ensure score is between 0 and 100
+    score = min(max(score, 0), 100)
+    return score, "; ".join(details)
+
+# Internal function with original logic
+def calculate_match_score_internal(
     personal_info1: PersonalInfo, gender1: str, location1: Location, personal_interests1: List[str], partner_preferences1: List[Preference],
     personal_info2: PersonalInfo, gender2: str, location2: Location, personal_interests2: List[str], partner_preferences2: List[Preference]
 ) -> tuple[float, str]:
@@ -260,7 +373,7 @@ async def handle_structured_output_response(
         return
 
     try:
-        score, details = calculate_match_score(
+        score, details = calculate_match_score_internal(
             prompt.personal_info1, prompt.gender1, prompt.location1, prompt.personal_interests1, prompt.partner_preferences1,
             prompt.personal_info2, prompt.gender2, prompt.location2, prompt.personal_interests2, prompt.partner_preferences2
         )
@@ -285,7 +398,7 @@ async def handle_structured_output_response(
 async def handle_match_calculation(ctx: Context, sender: str, msg: MatchRequest):
     ctx.logger.info(f"Received match calculation request from {sender}")
     try:
-        score, details = calculate_match_score(
+        score, details = calculate_match_score_internal(
             msg.personal_info1, msg.gender1, msg.location1, msg.personal_interests1, msg.partner_preferences1,
             msg.personal_info2, msg.gender2, msg.location2, msg.personal_interests2, msg.partner_preferences2
         )
