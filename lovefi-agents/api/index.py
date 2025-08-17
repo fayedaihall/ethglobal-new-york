@@ -1,15 +1,35 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field
 import json
-import sys
-import os
+from typing import List, Dict, Optional
+import base64
+from mangum import Mangum
 
-# Add the parent directory to Python path to import our agent
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+app = FastAPI(title="Dating Matcher API")
 
-from dating_matcher import agent, MatchingRequest, MatchingResponse
+# Pydantic models
+class Profile(BaseModel):
+    age: int
+    interests: List[str]
+    location: str
+    name: Optional[str] = None
 
-app = FastAPI()
+class MatchingRequest(BaseModel):
+    profile1: Profile
+    profile2: Profile
+
+class CompatibilityFactors(BaseModel):
+    age: Dict
+    interests: Dict
+    location: Dict
+    overall_score: float
+
+class MatchingResponse(BaseModel):
+    score: float
+    explanation: str
+    compatibility_factors: CompatibilityFactors
+    recommendations: List[str]
 
 @app.post("/api/submit")
 @app.post("/submit")
@@ -233,9 +253,8 @@ async def health_check():
     """Health check endpoint"""
     return {"status": "Dating Matcher Agent is running", "agent": "lovefi-matcher"}
 
-# For Vercel compatibility
-def handler(event, context):
-    return app(event, context)
+# Create the Mangum handler for Vercel
+handler = Mangum(app)
 
 if __name__ == "__main__":
     import uvicorn

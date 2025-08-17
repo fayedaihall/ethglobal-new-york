@@ -102,7 +102,9 @@ function createEnvelope(
     session: uuidv4(),
     schema_digest: schemaDigest,
     protocol_digest: undefined,
-    payload: naclUtil.encodeBase64(new TextEncoder().encode(JSON.stringify(payload))),
+    payload: naclUtil.encodeBase64(
+      new TextEncoder().encode(JSON.stringify(payload))
+    ),
     expires: Math.floor(Date.now() / 1000) + 3600, // 1 hour
     nonce: Math.floor(Math.random() * 1000000),
   };
