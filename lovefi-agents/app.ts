@@ -101,8 +101,8 @@ function createEnvelope(
     target: target,
     session: uuidv4(),
     schema_digest: schemaDigest,
-    protocol_digest: null,
-    payload: naclUtil.encodeBase64(JSON.stringify(payload)),
+    protocol_digest: undefined,
+    payload: naclUtil.encodeBase64(new TextEncoder().encode(JSON.stringify(payload))),
     expires: Math.floor(Date.now() / 1000) + 3600, // 1 hour
     nonce: Math.floor(Math.random() * 1000000),
   };
@@ -168,9 +168,8 @@ app.post("/submit", async (req, res) => {
 
     if (envelope.sender === TARGET_AGENT_ADDRESS && envelope.payload) {
       // Decode the payload
-      const payloadStr = naclUtil.decodeUTF8(
-        naclUtil.decodeBase64(envelope.payload)
-      );
+      const decodedBytes = naclUtil.decodeBase64(envelope.payload);
+      const payloadStr = new TextDecoder().decode(decodedBytes);
       const response: MatchingResponse = JSON.parse(payloadStr);
 
       console.log("\n🎯 DETAILED MATCHING RESULTS:");
