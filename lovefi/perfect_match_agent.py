@@ -1,10 +1,12 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 from uuid import uuid4
 from typing import Any, List, Dict
 from uagents import Agent, Context, Model, Protocol
 import requests
 from math import radians, sin, cos, sqrt, asin
 import difflib
+from openai import OpenAI
+import asyncio
 
 # Import the necessary components of the chat protocol
 from uagents_core.contrib.protocols.chat import (
@@ -15,6 +17,14 @@ from uagents_core.contrib.protocols.chat import (
     TextContent,
     chat_protocol_spec,
 )
+
+# Replace with your OpenAI API key for image generation
+OPENAI_API_KEY = "" # API key removed for security
+
+# Use the provided OpenAI Agent address
+AI_AGENT_ADDRESS = "agent1q0h70caed8ax769shpemapzkyk65uscw4xwk6dc4t3emvp5jdcvqs9xs32y"
+if not AI_AGENT_ADDRESS:
+    raise ValueError("AI_AGENT_ADDRESS not set")
 
 # Helper functions
 def calculate_age(birthday_str: str) -> int | None:
@@ -49,6 +59,40 @@ def haversine(lon1: float, lat1: float, lon2: float, lat2: float) -> float:
     km = 6371 * c
     return km
 
+# Prompt template for generating the match profile
+PROFILE_PROMPT_TEMPLATE = """
+Based on this user description: "{description}"
+Generate a detailed profile of their perfect match, including age, personality, interests, appearance, and why they're a great fit. Keep it positive and fun.
+"""
+
+# Function to generate match profile using OpenAI
+def generate_match_profile(description: str) -> str:
+    client = OpenAI(api_key=OPENAI_API_KEY)
+    prompt = PROFILE_PROMPT_TEMPLATE.format(description=description)
+    try:
+        chat_completion = client.chat.completions.create(
+            messages=[{"role": "system", "content": prompt}],
+            model="gpt-4o-mini",
+        )
+        return chat_completion.choices[0].message.content
+    except Exception as e:
+        return f"Error generating profile: {str(e)}"
+
+# Function to generate image via DALL-E
+def generate_match_image(profile: str) -> str:
+    client = OpenAI(api_key=OPENAI_API_KEY)
+    try:
+        response = client.images.generate(
+            model="dall-e-3",
+            prompt=f"Create a realistic portrait of a person based on this description: {profile}",
+            size="1024x1024",
+            quality="standard",
+            n=1,
+        )
+        return response.data[0].url
+    except Exception as e:
+        return f"Error generating image: {str(e)}"
+
 # Define sub models
 class Location(Model):
     address: str
@@ -66,7 +110,7 @@ class PersonalInfo(Model):
     last_name: str
     birthday: str = ""
 
-# Define the MatchRequest and MatchResponse data models
+# Define the MatchRequest and MatchResponse data models for calculation
 class MatchRequest(Model):
     personal_info1: PersonalInfo
     gender1: str
@@ -83,6 +127,14 @@ class MatchResponse(Model):
     score: float
     details: str
 
+# Define SingleMatchRequest and SingleMatchResponse for generation
+class SingleMatchRequest(Model):
+    description: str
+
+class SingleMatchResponse(Model):
+    match_profile: str
+    image_url: str
+
 # Initialize the agent
 agent = Agent(
     name="DatingMatchAgent",
@@ -97,12 +149,6 @@ chat_proto = Protocol(spec=chat_protocol_spec)
 struct_output_client_proto = Protocol(
     name="StructuredOutputClientProtocol", version="0.1.0"
 )
-
-# Replace with one of the provided LLM addresses
-AI_AGENT_ADDRESS = 'agent1q0h70caed8ax769shpemapzkyk65uscw4xwk6dc4t3emvp5jdcvqs9xs32y'
-
-if not AI_AGENT_ADDRESS:
-    raise ValueError("AI_AGENT_ADDRESS not set")
 
 # Function to create a chat message
 def create_text_chat(text: str, end_session: bool = False) -> ChatMessage:
@@ -280,7 +326,7 @@ async def handle_structured_output_response(
     chat_message = create_text_chat(response_text)
     await ctx.send(session_sender, chat_message)
 
-# Protocol handler for direct match calculation requests
+# Protocol handler for match calculation requests
 @agent.on_message(MatchRequest, replies=MatchResponse)
 async def handle_match_calculation(ctx: Context, sender: str, msg: MatchRequest):
     ctx.logger.info(f"Received match calculation request from {sender}")
@@ -299,6 +345,28 @@ async def handle_match_calculation(ctx: Context, sender: str, msg: MatchRequest)
         )
         await ctx.send(sender, error_response)
 
+# Protocol handler for match generation requests
+@agent.on_message(SingleMatchRequest, replies=SingleMatchResponse)
+async def handle_match_generation(ctx: Context, sender: str, msg: SingleMatchRequest):
+    ctx.logger.info(f"Received match generation request from {sender}: {msg.description}")
+    
+    # Generate match profile using OpenAI
+    try:
+        profile = generate_match_profile(msg.description)
+        image_url = generate_match_image(profile)
+        response = SingleMatchResponse(
+            match_profile=profile,
+            image_url=image_url
+        )
+        await ctx.send(sender, response)
+    except Exception as err:
+        ctx.logger.error(f"Error generating match: {err}")
+        error_response = SingleMatchResponse(
+            match_profile=f"Error: Could not generate match profile: {str(err)}",
+            image_url="No image available"
+        )
+        await ctx.send(sender, error_response)
+
 # Include protocols in the agent
 agent.include(chat_proto)
 agent.include(struct_output_client_proto)
@@ -306,11 +374,11 @@ agent.include(struct_output_client_proto)
 @agent.on_event("startup")
 async def startup(ctx: Context):
     ctx.logger.info(f"DatingMatchAgent started. Address: {ctx.agent.address}")
-    ctx.logger.info("Agent accepts MatchRequest messages via protocol communication")
+    ctx.logger.info("Agent accepts MatchRequest and SingleMatchRequest messages via protocol communication")
 
 if __name__ == "__main__":
     print(f"DatingMatchAgent address: {agent.address}")
     print("Agent created successfully. Use this address in your tests.")
     print("Starting agent on http://localhost:8000...")
-    print("Agent handles protocol-based messages: MatchRequest")
+    print("Agent handles protocol-based messages: MatchRequest and SingleMatchRequest")
     agent.run()
