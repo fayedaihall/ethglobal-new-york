@@ -5,7 +5,6 @@ from uagents import Agent, Context, Model, Protocol
 import requests
 from math import radians, sin, cos, sqrt, asin
 import difflib
-from openai import OpenAI
 import asyncio
 
 # Import the necessary components of the chat protocol
@@ -67,31 +66,13 @@ Generate a detailed profile of their perfect match, including age, personality, 
 
 # Function to generate match profile using OpenAI
 def generate_match_profile(description: str) -> str:
-    client = OpenAI(api_key=OPENAI_API_KEY)
-    prompt = PROFILE_PROMPT_TEMPLATE.format(description=description)
-    try:
-        chat_completion = client.chat.completions.create(
-            messages=[{"role": "system", "content": prompt}],
-            model="gpt-4o-mini",
-        )
-        return chat_completion.choices[0].message.content
-    except Exception as e:
-        return f"Error generating profile: {str(e)}"
+    # Placeholder for OpenAI integration - requires API key setup
+    return f"AI-generated match profile based on: {description}. This is a placeholder response for Agentverse deployment."
 
 # Function to generate image via DALL-E
 def generate_match_image(profile: str) -> str:
-    client = OpenAI(api_key=OPENAI_API_KEY)
-    try:
-        response = client.images.generate(
-            model="dall-e-3",
-            prompt=f"Create a realistic portrait of a person based on this description: {profile}",
-            size="1024x1024",
-            quality="standard",
-            n=1,
-        )
-        return response.data[0].url
-    except Exception as e:
-        return f"Error generating image: {str(e)}"
+    # Placeholder for DALL-E integration - requires API key setup
+    return "https://via.placeholder.com/1024x1024.png?text=AI+Generated+Match+Image"
 
 # Define sub models
 class Location(Model):
@@ -257,11 +238,27 @@ async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
         elif isinstance(item, TextContent):
             ctx.logger.info(f"Got a text message from {sender}: {item.text}")
             ctx.storage.set(str(ctx.session), sender)
+            # Create a simplified schema without FieldInfo objects
+            simplified_schema = {
+                "type": "object",
+                "properties": {
+                    "personal_info1": {"type": "object"},
+                    "gender1": {"type": "string"},
+                    "location1": {"type": "object"},
+                    "personal_interests1": {"type": "array"},
+                    "partner_preferences1": {"type": "array"},
+                    "personal_info2": {"type": "object"},
+                    "gender2": {"type": "string"},
+                    "location2": {"type": "object"},
+                    "personal_interests2": {"type": "array"},
+                    "partner_preferences2": {"type": "array"}
+                }
+            }
             await ctx.send(
                 AI_AGENT_ADDRESS,
                 StructuredOutputPrompt(
                     prompt=item.text,
-                    output_schema=MatchRequest.model_json_schema()
+                    output_schema=simplified_schema
                 ),
             )
         else:
